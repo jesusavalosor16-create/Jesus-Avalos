@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fitness App (Demo)</title>
+
+    <!-- React + ReactDOM (CDN) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+    <!-- Babel para poder usar JSX sin instalar nada -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+      body { font-family: Arial, sans-serif; background:#0b1220; color:#e5e7eb; margin:0; }
+      .wrap { max-width: 900px; margin: 0 auto; padding: 24px; }
+      .card { background:#111a2e; border:1px solid #24304d; border-radius:16px; padding:16px; margin: 12px 0; }
+      input, select, button { padding:10px; border-radius:10px; border:1px solid #2a395c; background:#0b1220; color:#e5e7eb; }
+      button { cursor:pointer; }
+      .row { display:flex; gap:10px; flex-wrap:wrap; }
+      .row > * { flex:1; min-width: 180px; }
+      .tag { display:inline-block; padding:6px 10px; border-radius:999px; background:#172342; border:1px solid #2a395c; margin-right:8px; }
+      h1 { margin: 0 0 6px; }
+      small { color:#9ca3af; }
+      ul { margin: 10px 0 0; padding-left: 18px; }
+    </style>
+  </head>
+
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useMemo, useState } = React;
+
+      function App() {
+        const [date, setDate] = useState(new Date().toISOString().slice(0,10));
+        const [muscle, setMuscle] = useState("Pecho");
+        const [exercise, setExercise] = useState("Press banca");
+        const [sets, setSets] = useState(3);
+        const [reps, setReps] = useState(10);
+        const [notes, setNotes] = useState("");
+
+        const [logs, setLogs] = useState([]);
+
+        const muscles = useMemo(() => ([
+          "Pecho", "Espalda", "Hombro", "Bíceps", "Tríceps", "Pierna", "Glúteo", "Core"
+        ]), []);
+
+        const suggestions = useMemo(() => ({
+          "Pecho": ["Press banca", "Press inclinado", "Aperturas"],
+          "Espalda": ["Jalón al pecho", "Remo", "Peso muerto (ligero)"],
+          "Hombro": ["Press militar", "Elevaciones laterales", "Pájaros"],
+          "Bíceps": ["Curl barra", "Curl mancuerna", "Curl martillo"],
+          "Tríceps": ["Fondos", "Extensión polea", "Press cerrado"],
+          "Pierna": ["Sentadilla", "Prensa", "Extensión de pierna"],
+          "Glúteo": ["Hip thrust", "Patada cable", "Puente"],
+          "Core": ["Plancha", "Crunch", "Elevación de piernas"]
+        }), []);
+
+        function addLog() {
+          const item = {
+            id: crypto.randomUUID(),
+            date, muscle, exercise,
+            sets: Number(sets), reps: Number(reps),
+            notes: notes.trim()
+          };
+          setLogs(prev => [item, ...prev]);
+          setNotes("");
+        }
+
+        function removeLog(id) {
+          setLogs(prev => prev.filter(x => x.id !== id));
+        }
+
+        return (
+          <div className="wrap">
+            <h1>Fitness App (Demo)</h1>
+            <small>Registro simple de entrenamientos (sin instalar nada).</small>
+
+            <div className="card">
+              <div className="row" style={{marginTop: 10}}>
+                <div>
+                  <label>Fecha</label><br/>
+                  <input type="date" value={date} onChange={e=>setDate(e.target.value)} />
+                </div>
+
+                <div>
+                  <label>Músculo</label><br/>
+                  <select
+                    value={muscle}
+                    onChange={(e)=> {
+                      const m = e.target.value;
+                      setMuscle(m);
+                      const first = suggestions[m]?.[0] || "";
+                      if (first) setExercise(first);
+                    }}
+                  >
+                    {muscles.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label>Ejercicio</label><br/>
+                  <select value={exercise} onChange={e=>setExercise(e.target.value)}>
+                    {(suggestions[muscle] || []).map(ex => <option key={ex} value={ex}>{ex}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label>Series</label><br/>
+                  <input type="number" min="1" value={sets} onChange={e=>setSets(e.target.value)} />
+                </div>
+
+                <div>
+                  <label>Reps</label><br/>
+                  <input type="number" min="1" value={reps} onChange={e=>setReps(e.target.value)} />
+                </div>
+              </div>
+
+              <div style={{marginTop: 10}}>
+                <label>Notas (opcional)</label><br/>
+                <input
+                  style={{width:"100%"}}
+                  placeholder="Ej. RPE 8, subí 2.5kg, etc."
+                  value={notes}
+                  onChange={e=>setNotes(e.target.value)}
+                />
+              </div>
+
+              <div style={{marginTop: 12, display:"flex", gap:10}}>
+                <button onClick={addLog}>Guardar registro</button>
+                <span className="tag">Registros: {logs.length}</span>
+              </div>
+            </div>
+
+            <div className="card">
+              <b>Historial</b>
+              {logs.length === 0 ? (
+                <p style={{color:"#9ca3af"}}>Aún no hay registros. Agrega uno arriba 👆</p>
+              ) : (
+                <ul>
+                  {logs.map(item => (
+                    <li key={item.id} style={{marginBottom: 10}}>
+                      <span className="tag">{item.date}</span>
+                      <span className="tag">{item.muscle}</span>
+                      <b>{item.exercise}</b> — {item.sets}x{item.reps}
+                      {item.notes ? <div style={{color:"#cbd5e1"}}>📝 {item.notes}</div> : null}
+                      <div style={{marginTop:6}}>
+                        <button onClick={() => removeLog(item.id)}>Eliminar</button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+  </body>
+</html>
